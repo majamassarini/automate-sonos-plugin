@@ -1,0 +1,2 @@
+soco==0.17
+git+git://github.com/majamassarini/automate-home.git
