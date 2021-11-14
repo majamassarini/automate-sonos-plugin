@@ -123,7 +123,7 @@ class Trigger(home.protocol.Trigger, Description):
                 set(another_description.addresses) & set(self.addresses)
                 and another_description.msg["name"] == self.msg["name"]
             ):
-                triggered = another_description.msg["fields"] == self.msg["fields"]
+                triggered = True
         if triggered:
             self._logging.info(
                 "Triggered {} for {}".format(self.ACTION, self.addresses)
