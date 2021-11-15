@@ -3,4 +3,4 @@
 [![codecov](https://codecov.io/gh/majamassarini/automate-sonos-plugin/branch/main/graph/badge.svg?token=pOvjwMbn6E)](https://codecov.io/gh/majamassarini/automate-sonos-plugin)
 [![Documentation Status](https://readthedocs.org/projects/automate-sonos-plugin/badge/?version=latest)](https://automate-sonos-plugin.readthedocs.io/en/latest/?badge=latest)
 
-The **Sonos** plugin for the [automate-home project](https://maja-massarini-automate-home.readthedocs-hosted.com/en/latest/?).
+The **Sonos** plugin for the [automate-home project](https://github.com/majamassarini/automate-home).
