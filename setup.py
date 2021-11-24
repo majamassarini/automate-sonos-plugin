@@ -23,5 +23,5 @@ setup(name="automate-sonos-plugin",
       ],
       packages=find_packages(exclude=[]),
       include_package_data=True,
-      install_requires=['automate-home', 'soco']
+      install_requires=['automate-home', 'soco==0.17']
       )
