@@ -33,7 +33,7 @@ class Trigger(Parent):
             another_description, old_state
         )
         try:
-            new_state.volume = self.msg["fields"]["volume"]
+            new_state.volume = int(another_description.msg["fields"]["volume"])
         except AttributeError as e:
             raise e
         return new_state
