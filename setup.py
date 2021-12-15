@@ -5,8 +5,8 @@ with open(path.join(".", 'README.md'), encoding='utf-8') as f:
       long_description = f.read()
 
 setup(name="automate-sonos-plugin",
-      version="0.9.0",
-      url="https://github.com/majamassarini/sonos-plugin",
+      version="0.9.1",
+      url="https://github.com/majamassarini/automate-home",
       description="A Sonos plugin for automate-home",
       long_description=long_description,
       long_description_content_type='text/markdown',
@@ -23,5 +23,5 @@ setup(name="automate-sonos-plugin",
       ],
       packages=find_packages(exclude=[]),
       include_package_data=True,
-      install_requires=['automate-home', 'soco==0.17']
+      install_requires=['automate-home', 'soco>=0.17']
       )
