@@ -31,6 +31,6 @@ class Command(Parent):
 
 def action(player: soco.SoCo):
     try:
-        player.play()
+      player.play()
     except Exception as e:
         logging.getLogger(__name__).error(e)
