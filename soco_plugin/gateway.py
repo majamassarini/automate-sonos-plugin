@@ -54,7 +54,7 @@ class Gateway(home.protocol.Gateway):
                 if name not in self._players:
                     try:
                         player = await self._loop.run_in_executor(
-                            None, lambda: soco.discovery.by_name(name)
+                            None, lambda: soco.discovery.scan_network_get_by_name(name)
                         )
                     except TypeError as e:
                         self.logger.error(e)
