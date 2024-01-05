@@ -40,10 +40,14 @@ class Command(Parent):
 
 
 def action(player: soco.SoCo, title: str):
+    player.clear_queue()
     try:
         _playlist = player.get_sonos_playlist_by_attr("title", title)
-        player.clear_queue()
         player.add_uri_to_queue(uri=_playlist.resources[0].uri)
         player.play_from_queue(index=0)
-    except Exception as e:
-        logging.getLogger(__name__).error(e)
+    except ValueError:
+        try:
+            _playlist = [favorite for favorite in player.get_sonos_favorites()['favorites'] if favorite['title'] == title][0]
+            player.add_uri_to_queue(uri=_playlist['uri'])
+        except Exception as e:
+            logging.getLogger(__name__).error(e)
