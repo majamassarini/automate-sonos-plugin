@@ -31,10 +31,7 @@ class Command(Parent):
 
     def make_msgs_from(self, old_state: Mixin, new_state: Mixin):
         result = []
-        if new_state.is_on and (
-            (old_state.is_on != new_state.is_on)
-            or (old_state.volume != new_state.volume)
-        ):
+        if new_state.is_on:
             self.msg["fields"]["value"] = new_state.volume
             result = self.execute()
         return result
