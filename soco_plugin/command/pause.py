@@ -32,6 +32,7 @@ class Command(Parent):
 
 def action(player: soco.SoCo):
     try:
+        logging.getLogger(__name__).debug("Pausing %s" % player.player_name)
         player.pause()
     except Exception as e:
         logging.getLogger(__name__).error(e)

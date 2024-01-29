@@ -31,6 +31,7 @@ class Command(Parent):
 
 def action(player: soco.SoCo):
     try:
+      logging.getLogger(__name__).debug("Playing at %s" % player.player_name)
       player.play()
     except Exception as e:
         logging.getLogger(__name__).error(e)

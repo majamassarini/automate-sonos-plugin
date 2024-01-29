@@ -38,6 +38,7 @@ class Command(Parent):
 
 def action(player: soco.SoCo, delta: int):
     try:
+        logging.getLogger(__name__).debug("Setting relative volume at %s" % player.player_name)
         player.volume += delta
     except Exception as e:
         logging.getLogger(__name__).error(e)
