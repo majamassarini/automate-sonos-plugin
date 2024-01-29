@@ -39,6 +39,7 @@ class Command(Parent):
 
 def action(player: soco.SoCo, value: int):
     try:
+        logging.getLogger(__name__).debug("Setting absolute volume %s" % player.player_name)
         player.volume = value
     except Exception as e:
         logging.getLogger(__name__).error(e)
