@@ -1,3 +1,4 @@
+import time
 import asyncio
 import logging
 import requests
@@ -35,6 +36,16 @@ class Gateway(home.protocol.Gateway):
             player.renderingControl.unsubscribe()
             player.avTransport.unsubscribe()
 
+    @staticmethod
+    def find_player(logger, name):
+        while True:
+            try:
+                return soco.discovery.scan_network_get_by_name(name)
+            except Exception as e:
+                logger.error(e)
+                player = None
+            time.sleep(120)
+
     async def _associate(
         self, descriptions: Iterable["soco_plugin.Description"]
     ) -> None:
@@ -43,7 +54,7 @@ class Gateway(home.protocol.Gateway):
                 if name not in self._players:
                     try:
                         player = await self._loop.run_in_executor(
-                            self.executor, lambda: soco.discovery.scan_network_get_by_name(name)
+                            self.executor, lambda: self.find_player(self.logger, name)
                         )
                     except TypeError as e:
                         self.logger.error(e)
