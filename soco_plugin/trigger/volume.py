@@ -29,6 +29,11 @@ class Trigger(Parent):
         >>> d = soco_plugin.Description(msg)
         >>> new_state = trigger.make_new_state_from(d, old_state)
         """
+        # Skip volume updates when in fading state
+        # Volume is constantly changing during fade and incoming values may be stale
+        if hasattr(old_state, 'is_fading') and old_state.is_fading:
+            return old_state
+
         new_state = super(Trigger, self).make_new_state_from(
             another_description, old_state
         )
