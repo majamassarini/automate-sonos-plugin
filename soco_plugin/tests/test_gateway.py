@@ -59,7 +59,7 @@ class TestGateway(unittest.TestCase):
         av_mock = unittest.mock.Mock()
         av_mock.events.get.return_value = event_mock
         mock.avTransport.subscribe.return_value = av_mock
-        with unittest.mock.patch("soco.discovery.by_name") as new_mock:
+        with unittest.mock.patch("soco.discovery.scan_network_get_by_name") as new_mock:
             new_mock.return_value = mock
             test.run()
         tc.assertIn(Test.STATE_CHANGED, events)
@@ -123,7 +123,7 @@ class TestGateway(unittest.TestCase):
         av_mock = unittest.mock.Mock()
         av_mock.events.get.return_value = event_mock
         mock.avTransport.subscribe.return_value = av_mock
-        with unittest.mock.patch("soco.discovery.by_name") as new_mock:
+        with unittest.mock.patch("soco.discovery.scan_network_get_by_name") as new_mock:
             new_mock.return_value = mock
             test.run()
         tc.assertIn(Test.STATE_CHANGED, events)
