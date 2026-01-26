@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import requests
-import time
 from concurrent.futures import ThreadPoolExecutor
 
 import home
@@ -14,18 +13,11 @@ from typing import Callable, Iterable
 class Gateway(home.protocol.Gateway):
 
     PROTOCOL = Description.PROTOCOL
-    # Timeout to ignore pause/play events after sending configuration commands
-    # This prevents processing echo events from Sonos during reconfiguration
-    COMMAND_ECHO_TIMEOUT = 3.0
 
     def __init__(self):
         self._players = {}
         self._loop = asyncio.get_event_loop()
         self.executor = ThreadPoolExecutor(max_workers=100)
-
-        # Track last configuration command time per player to filter echo events
-        self._last_config_command_time = {}
-
         self.logger = logging.getLogger(__name__)
 
     async def disconnect(self) -> None:
@@ -63,7 +55,6 @@ class Gateway(home.protocol.Gateway):
                             self.executor, lambda: player.avTransport.subscribe()
                         )
                         self._players[name] = (player, sub_rendering, sub_avtransport)
-                        self._last_config_command_time[player] = 0
 
     async def associate_commands(
         self, descriptions: Iterable["soco_plugin.Command"]
@@ -128,26 +119,6 @@ class Gateway(home.protocol.Gateway):
                 msgs = self.build_msgs_from_bus(player, event)
                 for task in tasks:
                     for msg in msgs:
-                        # Filter pause/play echo events after configuration commands
-                        # Sonos sends pause/play events during mode/playlist reconfiguration
-                        # which can incorrectly unforce or change forced states
-                        msg_name = msg["name"]
-                        is_pause_or_play = msg_name in (
-                            trigger.pause.Trigger.ACTION,
-                            trigger.play.Trigger.ACTION,
-                        )
-
-                        if is_pause_or_play and player in self._last_config_command_time:
-                            time_since_config = time.time() - self._last_config_command_time[player]
-                            if time_since_config < self.COMMAND_ECHO_TIMEOUT:
-                                self.logger.info(
-                                    "Ignoring {} echo from {} ({:.2f}s after config command)".format(
-                                        msg_name, player.player_name, time_since_config
-                                    )
-                                )
-                                continue  # Skip this echo event
-
-                        # Process event - either not an echo, or outside echo timeout window
                         self.logger.debug("Processing Sonos event: {}".format(msg))
                         self._loop.create_task(task(msg))
             except Exception as e:
@@ -159,6 +130,7 @@ class Gateway(home.protocol.Gateway):
         >>> import home
         >>> import soco_plugin
         >>> class Player:
+        ...     player_name = "TestPlayer"
         ...     def play(self):
         ...         print("play")
         ...     def pause(self):
@@ -179,7 +151,12 @@ class Gateway(home.protocol.Gateway):
         ...         print("play mode is {}".format(mode))
         ...     def get_sonos_playlist_by_attr(self, attr, title):
         ...         print ("playlist title is {}".format(title))
-        ...         return {"uri": "a uri"}
+        ...         class Playlist:
+        ...             def __init__(self):
+        ...                 class Resource:
+        ...                     uri = "a uri"
+        ...                 self.resources = [Resource()]
+        ...         return Playlist()
         ...     def clear_queue(self):
         ...         pass
         ...     def add_uri_to_queue(self, uri):
@@ -257,23 +234,6 @@ class Gateway(home.protocol.Gateway):
                 try:
                     await self._loop.run_in_executor(self.executor, action)
                     self.logger.info("Action executed successfully")
-
-                    # Record timestamp after executing configuration commands
-                    # These commands cause Sonos to reconfigure and emit pause/play echo events
-                    name = msg["name"]
-                    is_config_command = name in (
-                        command.mode.Command.ACTION,
-                        command.playlist.Command.ACTION,
-                        command.volume.absolute.Command.ACTION,
-                        command.volume.relative.Command.ACTION,
-                    )
-                    if is_config_command:
-                        self._last_config_command_time[player] = time.time()
-                        self.logger.debug(
-                            "Recorded config command timestamp for {} (will ignore pause/play echoes for {}s)".format(
-                                player.player_name, self.COMMAND_ECHO_TIMEOUT
-                            )
-                        )
                 except soco.exceptions.SoCoUPnPException as e:
                     self.logger.error("SoCo UPnP exception: {}".format(e))
                 except Exception as e:

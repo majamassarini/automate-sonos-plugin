@@ -169,36 +169,22 @@ The SoCo Event objects contain:
 
 This is a fundamental limitation of the Sonos UPnP event system and cannot be fully solved without changes to the SoCo library or Sonos firmware.
 
-### Current Mitigation: Time-based Echo Filtering
+### Current Mitigation: Appliance-level Event Disabling
 
-The plugin implements time-based filtering to mitigate this issue:
+The mitigation is implemented at the automate-home appliance state machine level rather
+than in this plugin. When a Sonos player enters a playing state (Fade In, Forced On,
+Forced Circadian Rhythm), automate-home temporarily disables `forced.Event.Off` in the
+appliance state machine so that echo events from Sonos are silently ignored:
 
-- When sending **configuration commands** (mode, playlist, volume), a timestamp is recorded
-- For the next **3 seconds**, any pause/play events from that speaker are ignored
-- After 3 seconds, pause/play events are processed normally again
+1. **On state entry** — a `state.entering.disable_events.Trigger` immediately calls
+   `appliance.disable(forced.Event.Off)`. Any `stop`/`pause` echo arriving from Sonos
+   is ignored by the state machine.
+2. **After 30 seconds** — a `state.entering.delay.enable_events.Trigger` calls
+   `appliance.enable(forced.Event.Off)`. Legitimate stop/pause commands from the user
+   are processed normally again.
 
-**Commands that trigger filtering:**
-- `mode.Command` (shuffle, repeat, etc.)
-- `playlist.Command` (changing playlist)
-- `volume.absolute.Command` (setting volume)
-- `volume.relative.Command` (adjusting volume)
-
-**Events that are filtered:**
-- `pause.Trigger` (only during 3-second window)
-- `play.Trigger` (only during 3-second window)
-
-**Events that are never filtered:**
-- `stop.Trigger` (always processed)
-- `volume.Trigger` (always processed)
-
-**Trade-offs:**
-- ✅ Fixes the circadian rhythm forced state problem
-- ✅ Allows complex multi-command sequences to complete without interference
-- ✅ Still detects user actions after the timeout window
-- ❌ User actions (Sonos app, physical controls) during the 3-second window are ignored
-- ❌ Requires tuning the timeout value for optimal performance
-
-The 3-second timeout was chosen as a conservative value that allows Sonos speakers time to complete reconfiguration while minimizing the window where real user actions are ignored.
+This plugin passes all Sonos events through without any filtering; the suppression
+window is configured entirely in the automate-home scheduler trigger YAML.
 
 ## Documentation
 
