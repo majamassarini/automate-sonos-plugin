@@ -29,6 +29,8 @@ class TestGateway(unittest.TestCase):
 
             async def asyncSetUp(self):
                 self._gw = soco_plugin.Gateway()
+                # Make _players dict support iteration for logging
+                self._gw._players = {}
                 self._loop = asyncio.get_event_loop()
                 self._loop.create_task(
                     self._gw.associate_triggers(
@@ -54,6 +56,7 @@ class TestGateway(unittest.TestCase):
 
         test = Test("test_stopped")
         mock = unittest.mock.Mock()
+        mock.player_name = "Bagno"
         event_mock = unittest.mock.Mock()
         event_mock.variables = {"transport_state": "STOPPED"}
         av_mock = unittest.mock.Mock()
@@ -118,6 +121,7 @@ class TestGateway(unittest.TestCase):
 
         test = Test("test_stopped")
         mock = unittest.mock.Mock()
+        mock.player_name = "Bagno"
         event_mock = unittest.mock.Mock()
         event_mock.variables = {"transport_state": "STOPPED"}
         av_mock = unittest.mock.Mock()
