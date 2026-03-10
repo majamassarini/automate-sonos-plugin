@@ -1,0 +1,95 @@
+name: Build
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+    inputs:
+      automate_home_branch:
+        description: "automate-home branch to install"
+        required: false
+        default: "main"
+
+env:
+  AUTOMATE_HOME_BRANCH: ${{ github.event.inputs.automate_home_branch || 'main' }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ".[dev]"
+          pip install git+https://github.com/majamassarini/automate-home.git@${{ env.AUTOMATE_HOME_BRANCH }}
+
+      - name: black
+        run: black --check .
+
+      - name: flake8
+        run: flake8 soco_plugin
+
+      - name: mypy
+        run: mypy soco_plugin
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ".[dev]"
+          pip install git+https://github.com/majamassarini/automate-home.git@${{ env.AUTOMATE_HOME_BRANCH }}
+
+      - name: Run unit tests
+        run: python -m coverage run -m unittest discover -s soco_plugin/tests -p 'test*.py' -v
+
+      - name: Run doctests
+        run: |
+          python -m doctest soco_plugin/gateway.py -v
+          python -m doctest soco_plugin/message.py -v
+          python -m doctest soco_plugin/command/play.py -v
+          python -m doctest soco_plugin/command/pause.py -v
+          python -m doctest soco_plugin/command/stop.py -v
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ".[docs]"
+          pip install git+https://github.com/majamassarini/automate-home.git@${{ env.AUTOMATE_HOME_BRANCH }}
+
+      - name: Build docs
+        run: make docs
+
+      - name: Upload docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-html
+          path: docs/build/html/
