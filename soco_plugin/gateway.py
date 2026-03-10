@@ -1,13 +1,13 @@
 import asyncio
 import logging
 import requests
+from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 
 import home
 import soco
 from soco_plugin.message import Description, Trigger, Msg
 from soco_plugin import command, trigger
-from typing import Callable, Iterable
 
 
 class Gateway(home.protocol.Gateway):
@@ -16,7 +16,6 @@ class Gateway(home.protocol.Gateway):
 
     def __init__(self):
         self._players = {}
-        self._loop = asyncio.get_event_loop()
         self.executor = ThreadPoolExecutor(max_workers=100)
         self.logger = logging.getLogger(__name__)
 
@@ -29,12 +28,14 @@ class Gateway(home.protocol.Gateway):
     async def _associate(
         self, descriptions: Iterable["soco_plugin.Description"]
     ) -> None:
+        loop = asyncio.get_running_loop()
         for description in descriptions:
             for name in description.msg["addresses"]:
                 if name not in self._players:
                     try:
-                        player = await self._loop.run_in_executor(
-                            self.executor, lambda: soco.discovery.scan_network_get_by_name(name)
+                        player = await loop.run_in_executor(
+                            self.executor,
+                            lambda: soco.discovery.scan_network_get_by_name(name),
                         )
                     except TypeError as e:
                         self.logger.error(e)
@@ -48,13 +49,19 @@ class Gateway(home.protocol.Gateway):
                     self.logger.info("Player %s: %s" % (name, str(player)))
                     if player:
                         # Subscribe calls are blocking and must run in executor
-                        sub_rendering = await self._loop.run_in_executor(
-                            self.executor, lambda: player.renderingControl.subscribe()
+                        sub_rendering = await loop.run_in_executor(
+                            self.executor,
+                            lambda: player.renderingControl.subscribe(),
                         )
-                        sub_avtransport = await self._loop.run_in_executor(
-                            self.executor, lambda: player.avTransport.subscribe()
+                        sub_avtransport = await loop.run_in_executor(
+                            self.executor,
+                            lambda: player.avTransport.subscribe(),
                         )
-                        self._players[name] = (player, sub_rendering, sub_avtransport)
+                        self._players[name] = (
+                            player,
+                            sub_rendering,
+                            sub_avtransport,
+                        )
 
     async def associate_commands(
         self, descriptions: Iterable["soco_plugin.Command"]
@@ -87,15 +94,21 @@ class Gateway(home.protocol.Gateway):
             #                               trigger.pause.Trigger.ACTION))
             if "PLAYING" in transport_state:
                 msgs.append(
-                    self.build_msg(player.player_name, trigger.play.Trigger.ACTION)
+                    self.build_msg(
+                        player.player_name, trigger.play.Trigger.ACTION
+                    )
                 )
             elif "PAUSED" in transport_state:
                 msgs.append(
-                    self.build_msg(player.player_name, trigger.pause.Trigger.ACTION)
+                    self.build_msg(
+                        player.player_name, trigger.pause.Trigger.ACTION
+                    )
                 )
             elif "STOPPED" in transport_state:
                 msgs.append(
-                    self.build_msg(player.player_name, trigger.stop.Trigger.ACTION)
+                    self.build_msg(
+                        player.player_name, trigger.stop.Trigger.ACTION
+                    )
                 )
         elif "volume" in event.variables:
             msgs.append(
@@ -107,25 +120,38 @@ class Gateway(home.protocol.Gateway):
             )
         return msgs
 
-    async def _wait_for_event(self, player: soco.SoCo, channel, tasks) -> None:
-        self.logger.info("Waiting for events from player {}".format(player.player_name))
+    async def _wait_for_event(
+        self, player: soco.SoCo, channel, tasks
+    ) -> None:
+        loop = asyncio.get_running_loop()
+        self.logger.info(
+            "Waiting for events from player {}".format(player.player_name)
+        )
         while True:
             await asyncio.sleep(0.01)  # avoid potential starvation
             try:
-                event = await self._loop.run_in_executor(
-                    self.executor, lambda: channel.events.get(block=True)
+                event = await loop.run_in_executor(
+                    self.executor,
+                    lambda: channel.events.get(block=True),
                 )
-                self.logger.debug("Sonos event from %s: %s" % (player.player_name, str(event)))
+                self.logger.debug(
+                    "Sonos event from %s: %s"
+                    % (player.player_name, str(event))
+                )
                 msgs = self.build_msgs_from_bus(player, event)
                 for task in tasks:
                     for msg in msgs:
-                        self.logger.debug("Processing Sonos event: {}".format(msg))
-                        self._loop.create_task(task(msg))
+                        self.logger.debug(
+                            "Processing Sonos event: {}".format(msg)
+                        )
+                        loop.create_task(task(msg))
             except Exception as e:
                 self.logger.error(e)
 
     @staticmethod
-    def get_action(player: soco.SoCo, msg: "soco_plugin.message.Command") -> Callable:
+    def get_action(
+        player: soco.SoCo, msg: "soco_plugin.message.Command"
+    ) -> Callable:
         """
         >>> import home
         >>> import soco_plugin
@@ -226,20 +252,30 @@ class Gateway(home.protocol.Gateway):
     async def send_msg(
         self, msg: "soco_plugin.message.Command", player: soco.SoCo
     ) -> None:
-        self.logger.info("Executing Sonos action {} on player {}".format(msg["name"], player.player_name))
+        self.logger.info(
+            "Executing Sonos action {} on player {}".format(
+                msg["name"], player.player_name
+            )
+        )
         if msg:
             action = self.get_action(player, msg)
             if action:
                 self.logger.info("Action found: {}".format(action))
                 try:
-                    await self._loop.run_in_executor(self.executor, action)
+                    await asyncio.get_running_loop().run_in_executor(
+                        self.executor, action
+                    )
                     self.logger.info("Action executed successfully")
                 except soco.exceptions.SoCoUPnPException as e:
                     self.logger.error("SoCo UPnP exception: {}".format(e))
                 except Exception as e:
-                    self.logger.error("Exception executing action: {}".format(e))
+                    self.logger.error(
+                        "Exception executing action: {}".format(e)
+                    )
             else:
-                self.logger.warning("No action found for message: {}".format(msg))
+                self.logger.warning(
+                    "No action found for message: {}".format(msg)
+                )
 
     async def writer(
         self, msgs: Iterable["soco_plugin.message.Command"], *args
@@ -248,18 +284,38 @@ class Gateway(home.protocol.Gateway):
         msg_count = 0
         for msg in msgs:
             msg_count += 1
-            self.logger.info("Processing message {}: {} (type: {})".format(msg_count, msg, type(msg)))
+            self.logger.info(
+                "Processing message {}: {} (type: {})".format(
+                    msg_count, msg, type(msg)
+                )
+            )
             if isinstance(msg, Msg):
                 for address in msg["addresses"]:
-                    self.logger.info("Checking address: {} in players: {}".format(address, list(self._players.keys())))
+                    self.logger.info(
+                        "Checking address: {} in players: {}".format(
+                            address, list(self._players.keys())
+                        )
+                    )
                     if address in self._players:
                         (player, _, _) = self._players[address]
-                        self.logger.info("Sending Sonos command {} to {}".format(msg, address))
+                        self.logger.info(
+                            "Sending Sonos command {} to {}".format(
+                                msg, address
+                            )
+                        )
                         await self.send_msg(msg, player)
                     else:
-                        self.logger.warning("Address {} not found in players {}".format(address, list(self._players.keys())))
+                        self.logger.warning(
+                            "Address {} not found in players {}".format(
+                                address, list(self._players.keys())
+                            )
+                        )
             else:
-                self.logger.warning("Message is not a Msg instance: {} (type: {})".format(msg, type(msg)))
+                self.logger.warning(
+                    "Message is not a Msg instance: {} (type: {})".format(
+                        msg, type(msg)
+                    )
+                )
         if msg_count == 0:
             self.logger.debug("Writer called with 0 messages")
 
@@ -269,13 +325,22 @@ class Gateway(home.protocol.Gateway):
         return t
 
     async def run(self, other_tasks: Iterable[Callable]) -> None:
+        loop = asyncio.get_running_loop()
         wrapped_tasks = self._wrap_tasks(other_tasks)
         for (player, sub_rendering, sub_avtransport) in self._players.values():
-            self._loop.create_task(
-                self._wait_for_event(player, sub_avtransport, wrapped_tasks),
-                name="Soco wait for event (avtransport) for {}".format(player.player_name)
+            loop.create_task(
+                self._wait_for_event(
+                    player, sub_avtransport, wrapped_tasks
+                ),
+                name="Soco wait for event (avtransport) for {}".format(
+                    player.player_name
+                ),
             )
-            self._loop.create_task(
-                self._wait_for_event(player, sub_rendering, wrapped_tasks),
-                name="Soco wait for event (rendering) for {}".format(player.player_name)
+            loop.create_task(
+                self._wait_for_event(
+                    player, sub_rendering, wrapped_tasks
+                ),
+                name="Soco wait for event (rendering) for {}".format(
+                    player.player_name
+                ),
             )

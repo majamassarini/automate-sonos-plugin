@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "automate-sonos-plugin"
+version = "0.9.1"
+description = "A Sonos plugin for automate-home"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Maja Massarini", email = "maja.massarini@gmail.com" }]
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Communications",
+    "Intended Audience :: Developers",
+]
+dependencies = ["automate-home", "soco==0.24.0"]
+
+[project.optional-dependencies]
+dev = [
+    "coverage",
+    "black==24.10.0",
+    "flake8==7.1.1",
+    "flake8-pyproject",
+    "mypy==1.13.0",
+    "pre-commit",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+]
+
+[project.urls]
+Homepage = "https://github.com/majamassarini/automate-sonos-plugin"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["soco_plugin*"]
+
+[tool.black]
+line-length = 79
+
+[tool.flake8]
+ignore = ["F821"]
+extend-ignore = ["W503", "E501", "W505"]
+max-line-length = 90
+max-doc-length = 120
+per-file-ignores = ["__init__.py:F401,E402"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+
+[tool.coverage.run]
+command_line = "-m unittest discover"
+omit = ["*tests*", "*__init__.py"]
+
+[tool.coverage.report]
+omit = ["*tests*", "*__init__.py"]
