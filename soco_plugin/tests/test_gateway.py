@@ -31,7 +31,7 @@ class TestGateway(unittest.TestCase):
                 self._gw = soco_plugin.Gateway()
                 # Make _players dict support iteration for logging
                 self._gw._players = {}
-                self._loop = asyncio.get_event_loop()
+                self._loop = asyncio.get_running_loop()
                 self._loop.create_task(
                     self._gw.associate_triggers(
                         [
@@ -62,7 +62,9 @@ class TestGateway(unittest.TestCase):
         av_mock = unittest.mock.Mock()
         av_mock.events.get.return_value = event_mock
         mock.avTransport.subscribe.return_value = av_mock
-        with unittest.mock.patch("soco.discovery.scan_network_get_by_name") as new_mock:
+        with unittest.mock.patch(
+            "soco.discovery.scan_network_get_by_name"
+        ) as new_mock:
             new_mock.return_value = mock
             test.run()
         tc.assertIn(Test.STATE_CHANGED, events)
@@ -87,7 +89,7 @@ class TestGateway(unittest.TestCase):
 
             async def asyncSetUp(self):
                 self._gw = soco_plugin.Gateway()
-                self._loop = asyncio.get_event_loop()
+                self._loop = asyncio.get_running_loop()
                 self._loop.create_task(
                     self._gw.associate_triggers(
                         [
@@ -127,7 +129,9 @@ class TestGateway(unittest.TestCase):
         av_mock = unittest.mock.Mock()
         av_mock.events.get.return_value = event_mock
         mock.avTransport.subscribe.return_value = av_mock
-        with unittest.mock.patch("soco.discovery.scan_network_get_by_name") as new_mock:
+        with unittest.mock.patch(
+            "soco.discovery.scan_network_get_by_name"
+        ) as new_mock:
             new_mock.return_value = mock
             test.run()
         tc.assertIn(Test.STATE_CHANGED, events)

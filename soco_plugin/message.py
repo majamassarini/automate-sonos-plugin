@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from typing import List, Any, Type
+from typing import Any, Type
 
 import home
 
@@ -46,9 +46,9 @@ class Description(home.protocol.Description):
 
     def __eq__(self, other):
         if self.PROTOCOL == other.PROTOCOL:
-            if self.msg["name"] == other.msg["name"] and set(self.addresses) == set(
-                other.addresses
-            ):
+            if self.msg["name"] == other.msg["name"] and set(
+                self.addresses
+            ) == set(other.addresses):
                 return True
         return False
 
@@ -57,12 +57,12 @@ class Description(home.protocol.Description):
         return self._msg
 
     @property
-    def addresses(self) -> List[Address]:
+    def addresses(self) -> list[Address]:
         return self._addresses
 
     @classmethod
     def make(
-        cls, addresses: List[Address], fields: Any = None
+        cls, addresses: list[Address], fields: Any = None
     ) -> "soco_plugin.Description":
         description = copy.deepcopy(cls.Msg)
         description["addresses"] += addresses
@@ -72,7 +72,7 @@ class Description(home.protocol.Description):
 
     @classmethod
     def make_from_yaml(
-        cls, addresses: List[Address], fields: Any = None
+        cls, addresses: list[Address], fields: Any = None
     ) -> "soco_plugin.Description":
         return cls.make(addresses, fields)
 
@@ -135,8 +135,8 @@ class Trigger(home.protocol.Trigger, Description):
     @classmethod
     def make(
         cls,
-        addresses: List[Address],
-        events: List[home.Event] = None,
+        addresses: list[Address],
+        events: list[home.Event] = None,
         fields: Any = None,
     ) -> Type["soco_plugin.Trigger"]:
         description = copy.deepcopy(cls.Msg)
@@ -148,15 +148,15 @@ class Trigger(home.protocol.Trigger, Description):
     @classmethod
     def make_from_yaml(
         cls,
-        addresses: List[Address],
-        events: List[home.Event] = None,
+        addresses: list[Address],
+        events: list[home.Event] = None,
         fields: Any = None,
     ) -> Type["soco_plugin.Trigger"]:
         return cls.make(addresses, events, fields)
 
 
 class Command(Description, home.protocol.Command):
-    def execute(self) -> List[Msg]:
+    def execute(self) -> list[Msg]:
         msgs = []
         msg = Msg(copy.deepcopy(self.msg))
         msg["addresses"] = self.addresses
@@ -164,6 +164,8 @@ class Command(Description, home.protocol.Command):
         return msgs
 
     def make_msgs_from(
-        self, old_state: home.appliance.State, new_state: home.appliance.State
-    ) -> List[Msg]:
+        self,
+        old_state: home.appliance.State,
+        new_state: home.appliance.State,
+    ) -> list[Msg]:
         return []
