@@ -27,7 +27,12 @@ class Command(Parent):
 
     ACTION = "absolute_volume"
 
-    Msg = {"type": "soco", "name": ACTION, "fields": {"value": 10}, "addresses": []}
+    Msg = {
+        "type": "soco",
+        "name": ACTION,
+        "fields": {"value": 10},
+        "addresses": [],
+    }
 
     def make_msgs_from(self, old_state: Mixin, new_state: Mixin):
         result = []
@@ -39,7 +44,9 @@ class Command(Parent):
 
 def action(player: soco.SoCo, value: int):
     try:
-        logging.getLogger(__name__).debug("Setting absolute volume %s" % player.player_name)
+        logging.getLogger(__name__).debug(
+            "Setting absolute volume %s" % player.player_name
+        )
         player.volume = value
     except Exception as e:
         logging.getLogger(__name__).error(e)

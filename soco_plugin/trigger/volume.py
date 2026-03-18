@@ -31,7 +31,7 @@ class Trigger(Parent):
         """
         # Skip volume updates when in fading state
         # Volume is constantly changing during fade and incoming values may be stale
-        if hasattr(old_state, 'is_fading') and old_state.is_fading:
+        if hasattr(old_state, "is_fading") and old_state.is_fading:
             return old_state
 
         new_state = super(Trigger, self).make_new_state_from(

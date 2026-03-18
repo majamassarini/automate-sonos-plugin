@@ -5,4 +5,9 @@ class Trigger(Parent):
 
     ACTION = "play"
 
-    Msg = {"type": Parent.PROTOCOL, "name": ACTION, "fields": {}, "addresses": []}
+    Msg = {
+        "type": Parent.PROTOCOL,
+        "name": ACTION,
+        "fields": {},
+        "addresses": [],
+    }
