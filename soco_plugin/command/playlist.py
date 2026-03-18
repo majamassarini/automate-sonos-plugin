@@ -47,8 +47,14 @@ def action(player: soco.SoCo, title: str):
         player.play_from_queue(index=0)
     except ValueError:
         try:
-            logging.getLogger(__name__).debug("Set playlist at %s" % player.player_name)
-            _playlist = [favorite for favorite in player.get_sonos_favorites()['favorites'] if favorite['title'] == title][0]
-            player.add_uri_to_queue(uri=_playlist['uri'])
+            logging.getLogger(__name__).debug(
+                "Set playlist at %s" % player.player_name
+            )
+            _playlist = [
+                favorite
+                for favorite in player.get_sonos_favorites()["favorites"]
+                if favorite["title"] == title
+            ][0]
+            player.add_uri_to_queue(uri=_playlist["uri"])
         except Exception as e:
             logging.getLogger(__name__).error(e)

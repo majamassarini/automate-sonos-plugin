@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import copy
 import logging
 
-from typing import Any, Type
+from typing import Any, Optional
 
 import home
 
@@ -61,10 +63,8 @@ class Description(home.protocol.Description):
         return self._addresses
 
     @classmethod
-    def make(
-        cls, addresses: list[Address], fields: Any = None
-    ) -> "soco_plugin.Description":
-        description = copy.deepcopy(cls.Msg)
+    def make(cls, addresses: list[Address], fields: Any = None) -> Description:
+        description: dict[str, Any] = copy.deepcopy(cls.Msg)
         description["addresses"] += addresses
         if fields:
             description["fields"] = fields
@@ -73,11 +73,11 @@ class Description(home.protocol.Description):
     @classmethod
     def make_from_yaml(
         cls, addresses: list[Address], fields: Any = None
-    ) -> "soco_plugin.Description":
+    ) -> Description:
         return cls.make(addresses, fields)
 
     @classmethod
-    def make_from(cls, msg: Msg) -> "soco_plugin.Description":
+    def make_from(cls, msg: dict) -> Description:
         description = cls(msg)
         return description
 
@@ -114,7 +114,10 @@ class Trigger(home.protocol.Trigger, Description):
     [<Event.On: 'On'>]
     """
 
-    ACTION = None
+    ACTION: Optional[str] = None
+
+    def __init__(self, description: dict, events: Optional[list[Any]] = None):
+        super().__init__(description, events)  # type: ignore[call-arg]
 
     def is_triggered(self, another_description: Description) -> bool:
         triggered = False
@@ -133,25 +136,25 @@ class Trigger(home.protocol.Trigger, Description):
             return triggered
 
     @classmethod
-    def make(
+    def make(  # type: ignore[override]
         cls,
         addresses: list[Address],
-        events: list[home.Event] = None,
+        events: Optional[list[Any]] = None,
         fields: Any = None,
-    ) -> Type["soco_plugin.Trigger"]:
-        description = copy.deepcopy(cls.Msg)
+    ) -> Trigger:
+        description: dict[str, Any] = copy.deepcopy(cls.Msg)
         description["addresses"] += addresses
         if fields:
             description["fields"] = fields
         return cls(description, events)
 
     @classmethod
-    def make_from_yaml(
+    def make_from_yaml(  # type: ignore[override]
         cls,
         addresses: list[Address],
-        events: list[home.Event] = None,
+        events: Optional[list[Any]] = None,
         fields: Any = None,
-    ) -> Type["soco_plugin.Trigger"]:
+    ) -> Trigger:
         return cls.make(addresses, events, fields)
 
 

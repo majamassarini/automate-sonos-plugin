@@ -46,7 +46,9 @@ class Command(Parent):
 
 def action(player: soco.SoCo, mode):
     try:
-        logging.getLogger(__name__).debug("Changing mode %s" % player.player_name)
+        logging.getLogger(__name__).debug(
+            "Changing mode %s" % player.player_name
+        )
         player.play_mode = mode
     except Exception as e:
         logging.getLogger(__name__).error(e)
