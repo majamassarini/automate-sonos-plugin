@@ -10,10 +10,10 @@ on:
       automate_home_branch:
         description: "automate-home branch to install"
         required: false
-        default: "main"
+        default: "dev"
 
 env:
-  AUTOMATE_HOME_BRANCH: ${{ github.event.inputs.automate_home_branch || 'main' }}
+  AUTOMATE_HOME_BRANCH: ${{ github.event.inputs.automate_home_branch || github.base_ref || github.ref_name || 'dev' }}
 
 jobs:
   checks:
