@@ -29,7 +29,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install ".[dev]"
-          pip install git+https://github.com/majamassarini/automate-home.git@${{ env.AUTOMATE_HOME_BRANCH }}
+          pip install --force-reinstall git+https://github.com/majamassarini/automate-home.git@${{ env.AUTOMATE_HOME_BRANCH }}
 
       - name: black
         run: black --check .
@@ -57,7 +57,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install ".[dev]"
-          pip install git+https://github.com/majamassarini/automate-home.git@${{ env.AUTOMATE_HOME_BRANCH }}
+          pip install --force-reinstall git+https://github.com/majamassarini/automate-home.git@${{ env.AUTOMATE_HOME_BRANCH }}
 
       - name: Run unit tests
         run: python -m coverage run -m unittest discover -s soco_plugin/tests -p 'test*.py' -v
@@ -83,7 +83,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install ".[docs]"
-          pip install git+https://github.com/majamassarini/automate-home.git@${{ env.AUTOMATE_HOME_BRANCH }}
+          pip install --force-reinstall git+https://github.com/majamassarini/automate-home.git@${{ env.AUTOMATE_HOME_BRANCH }}
 
       - name: Build docs
         run: make docs
