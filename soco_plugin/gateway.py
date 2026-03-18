@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import requests
 from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
+from typing import Optional
 
 import home
 import soco
-from soco_plugin.message import Description, Trigger, Msg
+from soco_plugin.message import Command, Description, Trigger, Msg
 from soco_plugin import command, trigger
 
 
@@ -20,14 +23,12 @@ class Gateway(home.protocol.Gateway):
         self.logger = logging.getLogger(__name__)
 
     async def disconnect(self) -> None:
-        for (player, sub_rendering, sub_avtransport) in self._players.values():
+        for player, sub_rendering, sub_avtransport in self._players.values():
             player.renderingControl.unsubscribe()
             player.avTransport.unsubscribe()
         self.executor.shutdown(wait=True)
 
-    async def _associate(
-        self, descriptions: Iterable["soco_plugin.Description"]
-    ) -> None:
+    async def _associate(self, descriptions: Iterable[Description]) -> None:
         loop = asyncio.get_running_loop()
         for description in descriptions:
             for name in description.msg["addresses"]:
@@ -35,7 +36,9 @@ class Gateway(home.protocol.Gateway):
                     try:
                         player = await loop.run_in_executor(
                             self.executor,
-                            lambda: soco.discovery.scan_network_get_by_name(name),
+                            lambda: soco.discovery.scan_network_get_by_name(
+                                name
+                            ),
                         )
                     except TypeError as e:
                         self.logger.error(e)
@@ -64,18 +67,21 @@ class Gateway(home.protocol.Gateway):
                         )
 
     async def associate_commands(
-        self, descriptions: Iterable["soco_plugin.Command"]
+        self, descriptions: Iterable[Command]
     ) -> None:
         await self._associate(descriptions)
 
     async def associate_triggers(
-        self, descriptions: Iterable["soco_plugin.Trigger"]
+        self, descriptions: Iterable[Trigger]
     ) -> None:
         await self._associate(descriptions)
 
     def build_msg(
-        self, address: str, action: str, fields: dict = None
-    ) -> Description.Msg:
+        self,
+        address: str,
+        action: Optional[str],
+        fields: Optional[dict] = None,
+    ) -> Msg:
         msg = Msg()
         msg["type"] = Description.PROTOCOL
         msg["name"] = action
@@ -83,9 +89,7 @@ class Gateway(home.protocol.Gateway):
         msg["fields"] = fields if fields else {}
         return msg
 
-    def build_msgs_from_bus(
-        self, player: soco.SoCo, event
-    ) -> Iterable["soco_plugin.Description"]:
+    def build_msgs_from_bus(self, player: soco.SoCo, event) -> list[Msg]:
         msgs = list()
         if "transport_state" in event.variables:
             transport_state = event.variables["transport_state"]
@@ -120,9 +124,7 @@ class Gateway(home.protocol.Gateway):
             )
         return msgs
 
-    async def _wait_for_event(
-        self, player: soco.SoCo, channel, tasks
-    ) -> None:
+    async def _wait_for_event(self, player: soco.SoCo, channel, tasks) -> None:
         loop = asyncio.get_running_loop()
         self.logger.info(
             "Waiting for events from player {}".format(player.player_name)
@@ -149,9 +151,7 @@ class Gateway(home.protocol.Gateway):
                 self.logger.error(e)
 
     @staticmethod
-    def get_action(
-        player: soco.SoCo, msg: "soco_plugin.message.Command"
-    ) -> Callable:
+    def get_action(player: soco.SoCo, msg: Command) -> Optional[Callable]:
         """
         >>> import home
         >>> import soco_plugin
@@ -238,20 +238,24 @@ class Gateway(home.protocol.Gateway):
         elif name == command.pause.Command.ACTION:
             action = lambda: command.pause.action(player)  # noqa
         elif name == command.volume.relative.Command.ACTION:
-            action = lambda: command.volume.relative.action(player, **fields)  # noqa
+            action = lambda: command.volume.relative.action(  # noqa: E731
+                player, **fields
+            )
         elif name == command.volume.absolute.Command.ACTION:
-            action = lambda: command.volume.absolute.action(player, **fields)  # noqa
+            action = lambda: command.volume.absolute.action(  # noqa: E731
+                player, **fields
+            )
         elif name == command.volume.ramp.Command.ACTION:
-            action = lambda: command.volume.ramp.action(player, **fields)  # noqa
+            action = lambda: command.volume.ramp.action(  # noqa: E731
+                player, **fields
+            )
         elif name == command.playlist.Command.ACTION:
             action = lambda: command.playlist.action(player, **fields)  # noqa
         elif name == command.mode.Command.ACTION:
             action = lambda: command.mode.action(player, **fields)  # noqa
         return action
 
-    async def send_msg(
-        self, msg: "soco_plugin.message.Command", player: soco.SoCo
-    ) -> None:
+    async def send_msg(self, msg: Command, player: soco.SoCo) -> None:
         self.logger.info(
             "Executing Sonos action {} on player {}".format(
                 msg["name"], player.player_name
@@ -259,7 +263,7 @@ class Gateway(home.protocol.Gateway):
         )
         if msg:
             action = self.get_action(player, msg)
-            if action:
+            if action is not None:
                 self.logger.info("Action found: {}".format(action))
                 try:
                     await asyncio.get_running_loop().run_in_executor(
@@ -277,9 +281,7 @@ class Gateway(home.protocol.Gateway):
                     "No action found for message: {}".format(msg)
                 )
 
-    async def writer(
-        self, msgs: Iterable["soco_plugin.message.Command"], *args
-    ) -> None:
+    async def writer(self, msgs: Iterable[Command], *args) -> None:
         self.logger.debug("Writer called")
         msg_count = 0
         for msg in msgs:
@@ -320,26 +322,22 @@ class Gateway(home.protocol.Gateway):
             self.logger.debug("Writer called with 0 messages")
 
     @staticmethod
-    def make_trigger(msg: "soco_plugin.Description") -> "soco_plugin.Trigger":
+    def make_trigger(msg: Description) -> Trigger:
         t = Trigger.make_from(msg)
         return t
 
     async def run(self, other_tasks: Iterable[Callable]) -> None:
         loop = asyncio.get_running_loop()
         wrapped_tasks = self._wrap_tasks(other_tasks)
-        for (player, sub_rendering, sub_avtransport) in self._players.values():
+        for player, sub_rendering, sub_avtransport in self._players.values():
             loop.create_task(
-                self._wait_for_event(
-                    player, sub_avtransport, wrapped_tasks
-                ),
+                self._wait_for_event(player, sub_avtransport, wrapped_tasks),
                 name="Soco wait for event (avtransport) for {}".format(
                     player.player_name
                 ),
             )
             loop.create_task(
-                self._wait_for_event(
-                    player, sub_rendering, wrapped_tasks
-                ),
+                self._wait_for_event(player, sub_rendering, wrapped_tasks),
                 name="Soco wait for event (rendering) for {}".format(
                     player.player_name
                 ),
