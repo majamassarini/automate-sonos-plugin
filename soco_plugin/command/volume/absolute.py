@@ -13,6 +13,7 @@ class Command(Parent):
     >>> cmd = soco_plugin.command.volume.absolute.Command.make(["Bath"])
     >>> old_state = home.appliance.sound.player.state.off.State()
     >>> new_state = old_state.next(home.appliance.sound.player.event.forced.Event.On)
+    >>> new_state = new_state.next(home.event.presence.Event.On)
     >>> new_state = new_state.next(home.appliance.sound.player.event.volume.Event(66))
     >>> new_state = new_state.next(home.appliance.sound.player.event.sleepy_volume.Event(33))
     >>> new_state = new_state.next(home.event.sleepiness.Event.Awake)
