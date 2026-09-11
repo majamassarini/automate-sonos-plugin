@@ -33,22 +33,24 @@ class Gateway(home.protocol.Gateway):
         for description in descriptions:
             for name in description.msg["addresses"]:
                 if name not in self._players:
-                    try:
-                        player = await loop.run_in_executor(
-                            self.executor,
-                            lambda: soco.discovery.scan_network_get_by_name(
-                                name
-                            ),
-                        )
-                    except TypeError as e:
-                        self.logger.error(e)
-                        player = None
-                    except ConnectionError as e:
-                        self.logger.error(e)
-                        player = None
-                    except requests.exceptions.ReadTimeout as e:
-                        self.logger.error(e)
-                        player = None
+                    player = None
+                    for attempt in range(2):
+                        try:
+                            player = await loop.run_in_executor(
+                                self.executor,
+                                lambda: soco.discovery.scan_network_get_by_name(
+                                    name
+                                ),
+                            )
+                            break
+                        except (
+                            requests.exceptions.RequestException,
+                            ConnectionError,
+                            TypeError,
+                        ) as e:
+                            self.logger.error(e)
+                            if attempt == 0:
+                                await asyncio.sleep(2)
                     self.logger.info("Player %s: %s" % (name, str(player)))
                     if player:
                         # Subscribe calls are blocking and must run in executor
