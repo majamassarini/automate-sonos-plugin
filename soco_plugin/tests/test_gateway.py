@@ -7,6 +7,7 @@
 import asyncio
 import unittest
 import unittest.mock
+import requests
 
 import soco_plugin
 
@@ -135,3 +136,97 @@ class TestGateway(unittest.TestCase):
             new_mock.return_value = mock
             test.run()
         tc.assertIn(Test.STATE_CHANGED, events)
+
+
+class TestGatewayAssociate(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self._gw = soco_plugin.Gateway()
+        self._descriptions = [
+            soco_plugin.Description(
+                {
+                    "type": "soco",
+                    "name": "volume",
+                    "fields": {"delta": 100},
+                    "addresses": ["LivingRoom"],
+                }
+            )
+        ]
+        self._mock_player = unittest.mock.Mock()
+        self._mock_player.player_name = "LivingRoom"
+
+    async def test_associate_connection_error_retry_success(self):
+        with (
+            unittest.mock.patch(
+                "soco.discovery.scan_network_get_by_name",
+                side_effect=[
+                    requests.exceptions.ConnectionError("No route to host"),
+                    self._mock_player,
+                ],
+            ) as mock_scan,
+            unittest.mock.patch("asyncio.sleep") as mock_sleep,
+        ):
+            await self._gw.associate_commands(self._descriptions)
+            self.assertIn("LivingRoom", self._gw._players)
+            self.assertEqual(mock_scan.call_count, 2)
+            mock_sleep.assert_called_once_with(2)
+
+    async def test_associate_connection_error_retry_failure(self):
+        with (
+            unittest.mock.patch(
+                "soco.discovery.scan_network_get_by_name",
+                side_effect=[
+                    requests.exceptions.ConnectionError("No route to host"),
+                    requests.exceptions.ConnectionError("No route to host"),
+                ],
+            ) as mock_scan,
+            unittest.mock.patch("asyncio.sleep") as mock_sleep,
+        ):
+            await self._gw.associate_commands(self._descriptions)
+            self.assertNotIn("LivingRoom", self._gw._players)
+            self.assertEqual(mock_scan.call_count, 2)
+            mock_sleep.assert_called_once_with(2)
+
+    async def test_associate_read_timeout_retry_success(self):
+        with (
+            unittest.mock.patch(
+                "soco.discovery.scan_network_get_by_name",
+                side_effect=[
+                    requests.exceptions.ReadTimeout("timed out"),
+                    self._mock_player,
+                ],
+            ) as mock_scan,
+            unittest.mock.patch("asyncio.sleep") as mock_sleep,
+        ):
+            await self._gw.associate_triggers(self._descriptions)
+            self.assertIn("LivingRoom", self._gw._players)
+            self.assertEqual(mock_scan.call_count, 2)
+            mock_sleep.assert_called_once_with(2)
+
+    async def test_associate_builtin_connection_error_retry_success(self):
+        with (
+            unittest.mock.patch(
+                "soco.discovery.scan_network_get_by_name",
+                side_effect=[
+                    ConnectionError("Connection reset"),
+                    self._mock_player,
+                ],
+            ) as mock_scan,
+            unittest.mock.patch("asyncio.sleep") as mock_sleep,
+        ):
+            await self._gw.associate_commands(self._descriptions)
+            self.assertIn("LivingRoom", self._gw._players)
+            self.assertEqual(mock_scan.call_count, 2)
+            mock_sleep.assert_called_once_with(2)
+
+    async def test_associate_success_no_retry(self):
+        with (
+            unittest.mock.patch(
+                "soco.discovery.scan_network_get_by_name",
+                return_value=self._mock_player,
+            ) as mock_scan,
+            unittest.mock.patch("asyncio.sleep") as mock_sleep,
+        ):
+            await self._gw.associate_commands(self._descriptions)
+            self.assertIn("LivingRoom", self._gw._players)
+            self.assertEqual(mock_scan.call_count, 1)
+            mock_sleep.assert_not_called()
