@@ -45,9 +45,16 @@ class Command(Parent):
         return result
 
 
-def action(player: soco.SoCo, volume: int, ramp_type):
+def action(
+    player: soco.SoCo,
+    volume: int = 10,
+    ramp_type: str = "SLEEP_TIMER_RAMP_TYPE",
+    **kwargs,
+):
+    if "value" in kwargs:
+        volume = kwargs["value"]
     try:
         logging.getLogger(__name__).debug("Ramp %s" % player.player_name)
-        player.ramp_to_volume(volume, ramp_type)
+        player.ramp_to_volume(int(volume), ramp_type)
     except Exception as e:
         logging.getLogger(__name__).error(e)

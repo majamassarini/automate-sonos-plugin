@@ -251,6 +251,15 @@ class Gateway(home.protocol.Gateway):
             action = lambda: command.volume.ramp.action(  # noqa: E731
                 player, **fields
             )
+        elif name == trigger.volume.Trigger.ACTION:
+            if "delta" in fields:
+                action = lambda: command.volume.relative.action(  # noqa: E731
+                    player, **fields
+                )
+            else:
+                action = lambda: command.volume.absolute.action(  # noqa: E731
+                    player, **fields
+                )
         elif name == command.playlist.Command.ACTION:
             action = lambda: command.playlist.action(player, **fields)  # noqa
         elif name == command.mode.Command.ACTION:
