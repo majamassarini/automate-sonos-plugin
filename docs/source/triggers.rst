@@ -28,6 +28,21 @@ Volume
 
 .. autoclass:: soco_plugin.trigger.volume.Trigger
 
+Volume Absolute
+---------------
+
+.. autoclass:: soco_plugin.trigger.volume.absolute.Trigger
+
+Volume Relative
+---------------
+
+.. autoclass:: soco_plugin.trigger.volume.relative.Trigger
+
+Volume Ramp
+-----------
+
+.. autoclass:: soco_plugin.trigger.volume.ramp.Trigger
+
 
 
 

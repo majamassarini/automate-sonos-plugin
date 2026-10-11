@@ -41,11 +41,13 @@ class Command(Parent):
         return result
 
 
-def action(player: soco.SoCo, delta: int):
+def action(player: soco.SoCo, delta: int = 0, **kwargs):
+    if "delta" in kwargs:
+        delta = kwargs["delta"]
     try:
         logging.getLogger(__name__).debug(
             "Setting relative volume at %s" % player.player_name
         )
-        player.volume += delta
+        player.volume += int(delta)
     except Exception as e:
         logging.getLogger(__name__).error(e)

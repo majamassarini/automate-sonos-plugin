@@ -43,11 +43,13 @@ class Command(Parent):
         return result
 
 
-def action(player: soco.SoCo, value: int):
+def action(player: soco.SoCo, value: int = 0, **kwargs):
+    if "volume" in kwargs:
+        value = kwargs["volume"]
     try:
         logging.getLogger(__name__).debug(
             "Setting absolute volume %s" % player.player_name
         )
-        player.volume = value
+        player.volume = int(value)
     except Exception as e:
         logging.getLogger(__name__).error(e)
