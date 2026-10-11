@@ -46,6 +46,6 @@ def action(player: soco.SoCo, delta: int):
         logging.getLogger(__name__).debug(
             "Setting relative volume at %s" % player.player_name
         )
-        player.volume += delta
+        player.set_relative_volume(int(delta))
     except Exception as e:
         logging.getLogger(__name__).error(e)
