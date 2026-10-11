@@ -1,5 +1,6 @@
-import home
+from __future__ import annotations
 
+import home
 from soco_plugin.message import Trigger as Parent, Description
 
 
@@ -18,7 +19,7 @@ class Trigger(Parent):
         self,
         another_description: Description,
         old_state: home.appliance.attribute.mixin.Volume,
-    ) -> bool:
+    ):
         """
         >>> import soco_plugin
         >>> import home
@@ -28,10 +29,15 @@ class Trigger(Parent):
         >>> msg["addresses"] = ["an address", ]
         >>> d = soco_plugin.Description(msg)
         >>> new_state = trigger.make_new_state_from(d, old_state)
+        >>> new_state.volume
+        1
         """
         # Skip volume updates when in fading state
         # Volume is constantly changing during fade and incoming values may be stale
         if hasattr(old_state, "is_fading") and old_state.is_fading:
+            return old_state
+
+        if not self.is_triggered(another_description):
             return old_state
 
         new_state = super(Trigger, self).make_new_state_from(
