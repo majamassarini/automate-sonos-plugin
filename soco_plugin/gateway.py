@@ -116,7 +116,7 @@ class Gateway(home.protocol.Gateway):
                         player.player_name, trigger.stop.Trigger.ACTION
                     )
                 )
-        elif "volume" in event.variables:
+        elif "Master" in event.variables.get("volume", {}):
             msgs.append(
                 self.build_msg(
                     player.player_name,
@@ -191,6 +191,8 @@ class Gateway(home.protocol.Gateway):
         ...         pass
         ...     def play_from_queue(self, index):
         ...         pass
+        ...     def set_relative_volume(self, delta):
+        ...         print("volume changed by {}".format(delta))
         ...     def ramp_to_volume(self, volume, ramp_type):
         ...         print("ramp to {} {}".format(volume, ramp_type))
 
@@ -208,7 +210,7 @@ class Gateway(home.protocol.Gateway):
         >>> msgs = soco_plugin.command.volume.relative.Command.make(["Bath"]).make_msgs_from(old_state, new_state)
         >>> action = soco_plugin.Gateway.get_action(Player(), msgs[0])
         >>> action()
-        volume is 11
+        volume changed by 10
         >>> msgs = soco_plugin.command.playlist.Command.make(["Bath"]).make_msgs_from(old_state, new_state)
         >>> action = soco_plugin.Gateway.get_action(Player(), msgs[0])
         >>> action()
