@@ -257,6 +257,12 @@ class Gateway(home.protocol.Gateway):
             action = lambda: command.playlist.action(player, **fields)  # noqa
         elif name == command.mode.Command.ACTION:
             action = lambda: command.mode.action(player, **fields)  # noqa
+        elif name == command.group.join.Command.ACTION:
+            action = lambda: command.group.join.action(  # noqa: E731
+                player, **fields
+            )
+        elif name == command.group.leave.Command.ACTION:
+            action = lambda: command.group.leave.action(player)  # noqa
         return action
 
     async def send_msg(self, msg: Command, player: soco.SoCo) -> None:
