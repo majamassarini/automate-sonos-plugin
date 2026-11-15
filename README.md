@@ -47,6 +47,20 @@ Trigger and command for a [sound player model](https://automate-home.readthedocs
   triggers: [ ]
 
 - !Performer
+  name: "sonos commands, joining the Bagno group while fading in"
+  for appliance: "another sound player"
+  commands:
+  # leave before pause: a grouped player can't be paused on its own
+  - !soco_plugin.command.group.leave.Command {addresses: ["Camera"]}
+  - !soco_plugin.command.pause.Command {addresses: ["Camera"]}
+  - !soco_plugin.command.playlist.Command {addresses: ["Camera"]}
+  - !soco_plugin.command.volume.absolute.Command {addresses: ["Camera"]}
+  - !soco_plugin.command.play.Command {addresses: ["Camera"]}
+  # join after play: setting a playlist takes a player out of its group
+  - !soco_plugin.command.group.join.Command {addresses: ["Camera"], fields: {"coordinator": "Bagno"}}
+  triggers: []
+
+- !Performer
   name: "sonos relative volume up through knx dimming button"
   for appliance: "a sound player"
   triggers:

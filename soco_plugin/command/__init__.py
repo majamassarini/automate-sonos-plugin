@@ -12,4 +12,12 @@ Mixin = TypeVar(
 )
 
 
-from soco_plugin.command import volume, playlist, play, pause, stop, mode
+from soco_plugin.command import (
+    volume,
+    playlist,
+    play,
+    pause,
+    stop,
+    mode,
+    group,
+)

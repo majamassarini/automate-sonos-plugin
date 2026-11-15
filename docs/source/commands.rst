@@ -48,3 +48,13 @@ Volume Ramp
 -----------
 
 .. autoclass:: soco_plugin.command.volume.ramp.Command
+
+Group Join
+----------
+
+.. autoclass:: soco_plugin.command.group.join.Command
+
+Group Leave
+-----------
+
+.. autoclass:: soco_plugin.command.group.leave.Command
