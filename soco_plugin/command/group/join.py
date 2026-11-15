@@ -6,37 +6,25 @@ from soco_plugin.command import Mixin
 
 
 class Command(Parent):
-    """Join the player to the group of another player when the appliance
-    enters a given state.
+    """Join the player to the group of another player.
 
-    The fields name the player playing the music for the group (the
-    coordinator) and the appliance state that starts the grouping, e.g.
-    ``fields: {"coordinator": "Bagno", "state": "Forced Circadian Rhythm"}``. List this
-    command after the playlist and play commands: setting a playlist on a
-    grouped player takes it out of the group.
+    The ``coordinator`` field names the player playing the music for the
+    group, e.g. ``fields: {"coordinator": "Bagno"}``. The command is sent
+    every time it is executed. A player already in that group is left as it
+    is. Setting a playlist on a grouped player takes it out of the group, so
+    join after the playlist and play commands.
 
     >>> import home
     >>> import soco_plugin
 
-    >>> cmd = soco_plugin.command.group.join.Command.make(
-    ...     ["Camera"], {"coordinator": "Bagno", "state": "Forced Circadian Rhythm"})
+    >>> cmd = soco_plugin.command.group.join.Command.make(["Camera"], {"coordinator": "Bagno"})
     >>> old_state = home.appliance.sound.player.state.off.State()
-    >>> new_state = old_state.next(home.appliance.sound.player.event.forced.Event.CircadianRhythm)
-    >>> new_state.VALUE
-    'Forced Circadian Rhythm'
+    >>> new_state = old_state.next(home.appliance.sound.player.event.volume.Event(50))
     >>> msg = cmd.make_msgs_from(old_state, new_state)
     >>> msg[0]["name"]
     'join'
     >>> msg[0]["fields"]["coordinator"]
     'Bagno'
-
-    It does nothing while the appliance stays in that state, or when it
-    enters another one:
-
-    >>> cmd.make_msgs_from(new_state, new_state.next(home.appliance.sound.player.event.volume.Event(50)))
-    []
-    >>> cmd.make_msgs_from(old_state, old_state.next(home.appliance.sound.player.event.forced.Event.On))
-    []
     """
 
     ACTION = "join"
@@ -44,16 +32,12 @@ class Command(Parent):
     Msg = {
         "type": "soco",
         "name": ACTION,
-        "fields": {"coordinator": "Unknown", "state": "Unknown"},
+        "fields": {"coordinator": "Unknown"},
         "addresses": [],
     }
 
     def make_msgs_from(self, old_state: Mixin, new_state: Mixin):
-        state = self.msg["fields"]["state"]
-        result = []
-        if new_state.VALUE == state and old_state.VALUE != state:
-            result = self.execute()
-        return result
+        return self.execute()
 
 
 def action(player: soco.SoCo, coordinator: str):
