@@ -99,12 +99,16 @@ class TestVolumeCommands(unittest.TestCase):
         old_state = home.appliance.sound.player.state.off.State()
         old_state = old_state.next(home.event.presence.Event.On)
         old_state = old_state.next(home.event.sleepiness.Event.Asleep)
-        new_state = old_state.next(home.event.sleepiness.Event.Awake)
+        fading = old_state.next(home.event.sleepiness.Event.Awake)
+        new_state = fading.next(
+            home.appliance.sound.player.event.fade_in.volume.Event(40)
+        )
 
-        msgs = cmd.make_msgs_from(old_state, new_state)
+        self.assertEqual(cmd.make_msgs_from(old_state, fading), [])
+        msgs = cmd.make_msgs_from(fading, new_state)
         self.assertEqual(len(msgs), 1)
         self.assertEqual(msgs[0]["name"], "ramp_to_volume")
-        self.assertEqual(msgs[0]["fields"]["volume"], 30)
+        self.assertEqual(msgs[0]["fields"]["volume"], 40)
         self.assertEqual(
             msgs[0]["fields"]["ramp_type"], "SLEEP_TIMER_RAMP_TYPE"
         )

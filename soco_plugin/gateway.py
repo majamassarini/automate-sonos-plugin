@@ -219,14 +219,16 @@ class Gateway(home.protocol.Gateway):
         >>> old_state = old_state.next(home.event.presence.Event.On)
         >>> old_state = old_state.next(home.event.sleepiness.Event.Asleep)
         >>> new_state = old_state.next(home.event.sleepiness.Event.Awake)
-        >>> msgs = soco_plugin.command.volume.ramp.Command.make(["Bath"]).make_msgs_from(old_state, new_state)
-        >>> action = soco_plugin.Gateway.get_action(Player(), msgs[0])
-        >>> action()
-        ramp to 30 SLEEP_TIMER_RAMP_TYPE
         >>> msgs = soco_plugin.command.mode.Command.make(["Bath"]).make_msgs_from(old_state, new_state)
         >>> action = soco_plugin.Gateway.get_action(Player(), msgs[0])
         >>> action()
-        play mode is SHUFFLE
+        play mode is REPEAT_ALL
+        >>> old_state = new_state
+        >>> new_state = old_state.next(home.appliance.sound.player.event.fade_in.volume.Event(40))
+        >>> msgs = soco_plugin.command.volume.ramp.Command.make(["Bath"]).make_msgs_from(old_state, new_state)
+        >>> action = soco_plugin.Gateway.get_action(Player(), msgs[0])
+        >>> action()
+        ramp to 40 SLEEP_TIMER_RAMP_TYPE
 
         :param msg: a command message to be executed
         :param player: a player where the command will be applied

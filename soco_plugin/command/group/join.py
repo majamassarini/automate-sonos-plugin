@@ -8,23 +8,27 @@ from soco_plugin.command import Mixin
 class Command(Parent):
     """Join the player to the group of another player.
 
-    The ``coordinator`` field names the player playing the music for the
-    group, e.g. ``fields: {"coordinator": "Bagno"}``. The command is sent
-    every time it is executed. A player already in that group is left as it
-    is. Setting a playlist on a grouped player takes it out of the group, so
-    join after the playlist and play commands.
+    The player to join (the coordinator, playing the music for the group)
+    is the ``group`` property of the new state. The command is sent when
+    that property changes to a non-empty name. A player already in that
+    group is left as it is. Setting a playlist on a grouped player takes it
+    out of the group, so set the group after the playlist has been sent.
 
     >>> import home
     >>> import soco_plugin
 
-    >>> cmd = soco_plugin.command.group.join.Command.make(["Camera"], {"coordinator": "Bagno"})
-    >>> old_state = home.appliance.sound.player.state.off.State()
-    >>> new_state = old_state.next(home.appliance.sound.player.event.volume.Event(50))
-    >>> msg = cmd.make_msgs_from(old_state, new_state)
+    >>> cmd = soco_plugin.command.group.join.Command.make(["Camera"])
+    >>> alone = home.appliance.sound.player.state.off.State()
+    >>> grouped = alone.next(home.appliance.sound.player.event.group.Event("Bagno"))
+    >>> msg = cmd.make_msgs_from(alone, grouped)
     >>> msg[0]["name"]
     'join'
     >>> msg[0]["fields"]["coordinator"]
     'Bagno'
+    >>> cmd.make_msgs_from(grouped, grouped)
+    []
+    >>> cmd.make_msgs_from(grouped, alone)
+    []
     """
 
     ACTION = "join"
@@ -37,7 +41,11 @@ class Command(Parent):
     }
 
     def make_msgs_from(self, old_state: Mixin, new_state: Mixin):
-        return self.execute()
+        result = []
+        if new_state.group and old_state.group != new_state.group:
+            self.msg["fields"]["coordinator"] = new_state.group
+            result = self.execute()
+        return result
 
 
 def action(player: soco.SoCo, coordinator: str):
