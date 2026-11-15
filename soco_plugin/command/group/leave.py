@@ -9,18 +9,23 @@ class Command(Parent):
     """Take the player out of its group.
 
     It undoes :class:`soco_plugin.command.group.join.Command`. The command
-    is sent every time it is executed. A player that plays for a group (a
-    coordinator) or plays alone is left as it is.
+    is sent when the ``group`` property of the state changes to an empty
+    name. A player that plays for a group (a coordinator) or plays alone is
+    left as it is.
 
     >>> import home
     >>> import soco_plugin
 
     >>> cmd = soco_plugin.command.group.leave.Command.make(["Camera"])
-    >>> old_state = home.appliance.sound.player.state.off.State()
-    >>> new_state = old_state.next(home.appliance.sound.player.event.volume.Event(50))
-    >>> msg = cmd.make_msgs_from(old_state, new_state)
+    >>> alone = home.appliance.sound.player.state.off.State()
+    >>> grouped = alone.next(home.appliance.sound.player.event.group.Event("Bagno"))
+    >>> msg = cmd.make_msgs_from(grouped, alone)
     >>> msg[0]["name"]
     'leave'
+    >>> cmd.make_msgs_from(alone, alone)
+    []
+    >>> cmd.make_msgs_from(alone, grouped)
+    []
     """
 
     ACTION = "leave"
@@ -28,7 +33,10 @@ class Command(Parent):
     Msg = {"type": "soco", "name": ACTION, "fields": {}, "addresses": []}
 
     def make_msgs_from(self, old_state: Mixin, new_state: Mixin):
-        return self.execute()
+        result = []
+        if old_state.group and not new_state.group:
+            result = self.execute()
+        return result
 
 
 def action(player: soco.SoCo):

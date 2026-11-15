@@ -7,6 +7,7 @@ Mixin = TypeVar(
     home.appliance.sound.player.state.fade_in.State,
     home.appliance.sound.player.state.fade_out.State,
     home.appliance.sound.player.state.forced.on.State,
+    home.appliance.sound.player.state.forced.sleepy_on.State,
     home.appliance.sound.player.state.forced.circadian_rhythm.State,
     home.appliance.sound.player.state.forced.off.State,
 )

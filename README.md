@@ -28,41 +28,29 @@ Trigger and command for a [sound player model](https://automate-home.readthedocs
         - !home.appliance.sound.player.event.forced.Event.Off
   - !soco_plugin.trigger.volume.Trigger {addresses: ["Bagno"]}
 
+# The commands read the appliance state: they send only when the property
+# they control changes (play_mode, playlist, volume, group, on/off).
 - !Performer
   name: "sonos commands"
   for appliance: "a sound player"
   commands:
   - !soco_plugin.command.pause.Command {addresses: ["Bagno"]}
+  - !soco_plugin.command.mode.Command {addresses: ["Bagno"]}
   - !soco_plugin.command.playlist.Command {addresses: ["Bagno"]}
   - !soco_plugin.command.volume.absolute.Command {addresses: ["Bagno"]}
-  - !soco_plugin.command.mode.Command { addresses: [ "Bagno" ], fields: { "mode": "SHUFFLE" } }
+  - !soco_plugin.command.volume.ramp.Command { addresses: [ "Bagno" ], fields: { "ramp_type": 'SLEEP_TIMER_RAMP_TYPE' } }
   - !soco_plugin.command.play.Command {addresses: ["Bagno"]}
   triggers: []
 
+# Joins the group named by the appliance's group property, and leaves it
+# when the property is cleared (sound.player.event.group.Event).
 - !Performer
-  name: "fade in or out command"
-  for appliance: "a sound player"
-  commands:
-    - !soco_plugin.command.volume.ramp.Command { addresses: [ "Bagno" ], fields: { "ramp_type": 'SLEEP_TIMER_RAMP_TYPE' } }
-  triggers: [ ]
-
-# Group commands are sent every time their performer runs: give them
-# performers of their own, run only when grouping is wanted.
-- !Performer
-  name: "join the Bagno group"
+  name: "sonos group commands"
   for appliance: "another sound player"
-  triggers:
-  - !knx_plugin.trigger.dpt_switch.On {addresses: [0x0C40]}
   commands:
-  - !soco_plugin.command.group.join.Command {addresses: ["Camera"], fields: {"coordinator": "Bagno"}}
-
-- !Performer
-  name: "leave the Bagno group"
-  for appliance: "another sound player"
-  triggers:
-  - !knx_plugin.trigger.dpt_switch.Off {addresses: [0x0C40]}
-  commands:
+  - !soco_plugin.command.group.join.Command {addresses: ["Camera"]}
   - !soco_plugin.command.group.leave.Command {addresses: ["Camera"]}
+  triggers: []
 
 - !Performer
   name: "sonos relative volume up through knx dimming button"
@@ -157,7 +145,7 @@ When pressing a button to enable Forced Circadian Rhythm mode on a Sonos speaker
 
 1. **Button pressed** → sends `forced.Event.CircadianRhythm` → State becomes **Forced Circadian Rhythm**
 2. **Performer executes commands** in sequence:
-   - `mode.Command` (set shuffle mode)
+   - `mode.Command` (set the play mode of the state, e.g. shuffle)
    - `playlist.Command` (select playlist)
    - `volume.Command` (set volume)
    - `play.Command` (start playback)
