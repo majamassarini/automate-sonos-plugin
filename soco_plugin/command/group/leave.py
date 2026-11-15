@@ -1,56 +1,58 @@
 import logging
 
-import home
 import soco
 from soco_plugin.message import Command as Parent
 from soco_plugin.command import Mixin
 
 
 class Command(Parent):
-    """Take the player out of its group when it stops fading in.
+    """Take the player out of its group when the appliance exits a given
+    state.
 
-    It undoes :class:`soco_plugin.command.group.join.Command`. A player that
-    plays for a group (a coordinator) or plays alone is left as it is. List
-    this command before the pause command: a grouped player can't be paused
-    on its own.
+    It undoes :class:`soco_plugin.command.group.join.Command`; the field
+    names the same state, e.g. ``fields: {"state": "Forced Circadian Rhythm"}``. A player
+    that plays for a group (a coordinator) or plays alone is left as it is.
+    List this command before the pause command: a grouped player can't be
+    paused on its own.
 
     >>> import home
     >>> import soco_plugin
 
-    >>> cmd = soco_plugin.command.group.leave.Command.make(["Camera Alja"])
+    >>> cmd = soco_plugin.command.group.leave.Command.make(
+    ...     ["Camera"], {"state": "Forced Circadian Rhythm"})
     >>> old_state = home.appliance.sound.player.state.off.State()
-    >>> old_state = old_state.next(home.event.presence.Event.On)
-    >>> old_state = old_state.next(home.event.sleepiness.Event.Awake)
+    >>> old_state = old_state.next(home.appliance.sound.player.event.forced.Event.CircadianRhythm)
     >>> old_state.VALUE
-    'Fade In'
-    >>> new_state = old_state.next(home.event.elapsed.Event.On)
+    'Forced Circadian Rhythm'
+    >>> new_state = old_state.next(home.appliance.sound.player.event.forced.Event.Off)
     >>> msg = cmd.make_msgs_from(old_state, new_state)
     >>> msg[0]["name"]
     'leave'
 
-    It also leaves when fading in is interrupted:
+    It does nothing while the appliance stays in that state, or when it
+    exits another one:
 
-    >>> msg = cmd.make_msgs_from(old_state, old_state.next(home.appliance.sound.player.event.forced.Event.Off))
-    >>> msg[0]["name"]
-    'leave'
-
-    It does nothing when the player was not fading in:
-
-    >>> on = home.appliance.sound.player.state.off.State().next(home.appliance.sound.player.event.forced.Event.On)
-    >>> cmd.make_msgs_from(on, on.next(home.appliance.sound.player.event.forced.Event.Off))
+    >>> cmd.make_msgs_from(old_state, old_state.next(home.appliance.sound.player.event.volume.Event(50)))
+    []
+    >>> other = home.appliance.sound.player.state.off.State().next(
+    ...     home.appliance.sound.player.event.forced.Event.On)
+    >>> cmd.make_msgs_from(other, other.next(home.appliance.sound.player.event.forced.Event.Off))
     []
     """
 
     ACTION = "leave"
 
-    Msg = {"type": "soco", "name": ACTION, "fields": {}, "addresses": []}
+    Msg = {
+        "type": "soco",
+        "name": ACTION,
+        "fields": {"state": "Unknown"},
+        "addresses": [],
+    }
 
     def make_msgs_from(self, old_state: Mixin, new_state: Mixin):
-        fade_in = home.appliance.sound.player.state.fade_in.State
+        state = self.msg["fields"]["state"]
         result = []
-        if isinstance(old_state, fade_in) and not isinstance(
-            new_state, fade_in
-        ):
+        if old_state.VALUE == state and new_state.VALUE != state:
             result = self.execute()
         return result
 
