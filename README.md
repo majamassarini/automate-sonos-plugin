@@ -47,17 +47,17 @@ Trigger and command for a [sound player model](https://automate-home.readthedocs
   triggers: [ ]
 
 - !Performer
-  name: "sonos commands, joining the Bagno group while fading in"
+  name: "sonos commands, joining the Bagno group while forced on"
   for appliance: "another sound player"
   commands:
   # leave before pause: a grouped player can't be paused on its own
-  - !soco_plugin.command.group.leave.Command {addresses: ["Camera"]}
+  - !soco_plugin.command.group.leave.Command {addresses: ["Camera"], fields: {"state": "Forced On"}}
   - !soco_plugin.command.pause.Command {addresses: ["Camera"]}
   - !soco_plugin.command.playlist.Command {addresses: ["Camera"]}
   - !soco_plugin.command.volume.absolute.Command {addresses: ["Camera"]}
   - !soco_plugin.command.play.Command {addresses: ["Camera"]}
   # join after play: setting a playlist takes a player out of its group
-  - !soco_plugin.command.group.join.Command {addresses: ["Camera"], fields: {"coordinator": "Bagno"}}
+  - !soco_plugin.command.group.join.Command {addresses: ["Camera"], fields: {"coordinator": "Bagno", "state": "Forced On"}}
   triggers: []
 
 - !Performer

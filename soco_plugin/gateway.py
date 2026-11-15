@@ -259,7 +259,7 @@ class Gateway(home.protocol.Gateway):
             action = lambda: command.mode.action(player, **fields)  # noqa
         elif name == command.group.join.Command.ACTION:
             action = lambda: command.group.join.action(  # noqa: E731
-                player, **fields
+                player, fields["coordinator"]
             )
         elif name == command.group.leave.Command.ACTION:
             action = lambda: command.group.leave.action(player)  # noqa

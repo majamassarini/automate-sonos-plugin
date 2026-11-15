@@ -18,52 +18,69 @@ def _fade_in():
 
 
 class TestGroupCommands(unittest.TestCase):
-    def test_join_when_entering_fade_in(self):
-        cmd = soco_plugin.command.group.join.Command.make(
-            ["Camera Alja"], {"coordinator": "Bagno"}
+    def setUp(self):
+        self.join = soco_plugin.command.group.join.Command.make(
+            ["Camera Alja"], {"coordinator": "Bagno", "state": "Fade In"}
         )
-        new_state = _fade_in()
+        self.leave = soco_plugin.command.group.leave.Command.make(
+            ["Camera Alja"], {"state": "Fade In"}
+        )
+
+    def test_join_when_entering_the_state(self):
         old_state = home.appliance.sound.player.state.off.State().next(
             home.event.presence.Event.On
         )
 
-        msgs = cmd.make_msgs_from(old_state, new_state)
+        msgs = self.join.make_msgs_from(old_state, _fade_in())
 
         self.assertEqual(len(msgs), 1)
         self.assertEqual(msgs[0]["name"], "join")
-        self.assertEqual(msgs[0]["fields"], {"coordinator": "Bagno"})
+        self.assertEqual(msgs[0]["fields"]["coordinator"], "Bagno")
         self.assertEqual(msgs[0]["addresses"], ["Camera Alja"])
 
-    def test_no_join_when_forced_on(self):
-        cmd = soco_plugin.command.group.join.Command.make(
-            ["Camera Alja"], {"coordinator": "Bagno"}
-        )
+    def test_no_join_when_entering_another_state(self):
         old_state = home.appliance.sound.player.state.off.State()
         new_state = old_state.next(
             home.appliance.sound.player.event.forced.Event.On
         )
 
-        self.assertEqual(cmd.make_msgs_from(old_state, new_state), [])
+        self.assertEqual(self.join.make_msgs_from(old_state, new_state), [])
 
-    def test_leave_when_fade_in_elapses(self):
-        cmd = soco_plugin.command.group.leave.Command.make(["Camera Alja"])
-        old_state = _fade_in()
-        new_state = old_state.next(home.event.elapsed.Event.On)
-
-        msgs = cmd.make_msgs_from(old_state, new_state)
-
-        self.assertEqual(len(msgs), 1)
-        self.assertEqual(msgs[0]["name"], "leave")
-        self.assertEqual(msgs[0]["addresses"], ["Camera Alja"])
-
-    def test_no_leave_while_fading_in(self):
-        cmd = soco_plugin.command.group.leave.Command.make(["Camera Alja"])
+    def test_no_join_while_staying_in_the_state(self):
         old_state = _fade_in()
         new_state = old_state.next(
             home.appliance.sound.player.event.fade_in.volume_scale.Event(50)
         )
 
-        self.assertEqual(cmd.make_msgs_from(old_state, new_state), [])
+        self.assertEqual(self.join.make_msgs_from(old_state, new_state), [])
+
+    def test_leave_when_exiting_the_state(self):
+        old_state = _fade_in()
+        new_state = old_state.next(home.event.elapsed.Event.On)
+
+        msgs = self.leave.make_msgs_from(old_state, new_state)
+
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(msgs[0]["name"], "leave")
+        self.assertEqual(msgs[0]["addresses"], ["Camera Alja"])
+
+    def test_no_leave_while_staying_in_the_state(self):
+        old_state = _fade_in()
+        new_state = old_state.next(
+            home.appliance.sound.player.event.fade_in.volume_scale.Event(50)
+        )
+
+        self.assertEqual(self.leave.make_msgs_from(old_state, new_state), [])
+
+    def test_no_leave_when_exiting_another_state(self):
+        old_state = home.appliance.sound.player.state.off.State().next(
+            home.appliance.sound.player.event.forced.Event.On
+        )
+        new_state = old_state.next(
+            home.appliance.sound.player.event.forced.Event.Off
+        )
+
+        self.assertEqual(self.leave.make_msgs_from(old_state, new_state), [])
 
 
 class TestGroupActions(unittest.TestCase):
@@ -104,7 +121,7 @@ class TestGroupActions(unittest.TestCase):
     def test_gateway_dispatches_group_commands(self):
         self.player.is_coordinator = False
         join = soco_plugin.command.group.join.Command.make(
-            ["Camera Alja"], {"coordinator": "Bagno"}
+            ["Camera Alja"], {"coordinator": "Bagno", "state": "Fade In"}
         ).make_msgs_from(
             home.appliance.sound.player.state.off.State(), _fade_in()
         )
@@ -112,7 +129,7 @@ class TestGroupActions(unittest.TestCase):
         self.player.join.assert_called_once_with(self.bagno)
 
         leave = soco_plugin.command.group.leave.Command.make(
-            ["Camera Alja"]
+            ["Camera Alja"], {"state": "Fade In"}
         ).make_msgs_from(
             _fade_in(), home.appliance.sound.player.state.off.State()
         )
